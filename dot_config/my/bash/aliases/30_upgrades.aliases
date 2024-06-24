@@ -1,0 +1,334 @@
+UPGRADE_MESSAGE="Upgrading.."
+
+# Install latest Terragrunt
+function terragrunt.upgrade() {
+  _info $UPGRADE_MESSAGE
+
+  LATEST=/tmp/terragrunt-latest.json
+
+  # grab json payload about latest Terragrunt version
+  curl -s -o $LATEST https://api.github.com/repos/gruntwork-io/terragrunt/releases/latest
+
+  CURRENT_VERSION=$(terragrunt --version | awk '{print $3}')
+  UPSTREAM_VERSION=$(cat $LATEST | jq -r .name)
+  SEMVER_COMP=$(semver compare $UPSTREAM_VERSION $CURRENT_VERSION)
+
+  if [[ "$SEMVER_COMP" == "0" ]]
+  then
+    echo "Current version of Terragrunt (${CURRENT_VERSION}) is up to date"
+    return 1
+  fi
+
+  echo "current : $CURRENT_VERSION"
+  echo "upstream: $UPSTREAM_VERSION"
+  read -r -p "Do you want to update? [y/N] " response
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
+  then
+    BROWSER_DOWNLOAD_URL=$(cat $LATEST | jq -r '.assets[] | select(.name=="terragrunt_linux_amd64") | .browser_download_url')
+    echo "installing..."
+    sudo whoami > /dev/null
+    TERRAGRUNT=/tmp/terragrunt_linux_amd64
+    wget -q --output-document=${TERRAGRUNT} $BROWSER_DOWNLOAD_URL
+
+    if sudo install $TERRAGRUNT $(type -p terragrunt)
+    then
+        echo "Installation succeeded"
+        echo -n "Current version: "; terragrunt --version | awk '{print $3}'
+    else
+        echo "Installation failed"
+        echo "Somthing goes wrong"
+    fi
+  else
+    echo "ok, exiting"
+  fi
+}
+
+# Install latest Terraform
+function terraform.upgrade() {
+  _info $UPGRADE_MESSAGE
+
+  LATEST=/tmp/terraform-latest.json
+
+  # grab json payload about latest Terraform version
+  curl -s -o $LATEST https://api.github.com/repos/hashicorp/terraform/releases/latest
+
+  CURRENT_VERSION=$(terraform -version | head -n1 | awk '{ print $2 }')
+  UPSTREAM_VERSION=$(cat $LATEST | jq -r .name)
+
+  # Remove v from the beginning of each version
+  CURRENT_VERSION="${CURRENT_VERSION:1}"
+  UPSTREAM_VERSION="${UPSTREAM_VERSION:1}"
+
+  SEMVER_COMP=$(semver compare $UPSTREAM_VERSION $CURRENT_VERSION)
+
+  if [[ "$SEMVER_COMP" == "0" ]]
+  then
+    echo "Current version of Terraform (${CURRENT_VERSION}) is up to date"
+    return 1
+  fi
+
+  echo "current : $CURRENT_VERSION"
+  echo "upstream: $UPSTREAM_VERSION"
+  read -r -p "Do you want to update? [y/N] " response
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
+  then
+    BROWSER_DOWNLOAD_URL="https://releases.hashicorp.com/terraform/${UPSTREAM_VERSION}/terraform_${UPSTREAM_VERSION}_linux_amd64.zip"
+
+    echo "installing..."
+    sudo whoami > /dev/null
+    DOCUMENT=/tmp/terraform_${UPSTREAM_VERSION}.zip
+    wget -q --output-document=${DOCUMENT} $BROWSER_DOWNLOAD_URL
+    unzip $DOCUMENT -d /tmp
+
+    if sudo install /tmp/terraform $(type -p terraform)
+    then
+        echo "Installation succeeded"
+        echo -n "Current version: "; terraform -version | head -n1 | awk '{ print $2 }'
+    else
+        echo "Installation failed"
+        echo "Somthing goes wrong"
+    fi
+  else
+    echo "ok, exiting"
+  fi
+}
+
+# Install latest Flux2
+function flux.upgrade() {
+  _info $UPGRADE_MESSAGE
+
+  LATEST=/tmp/flux-latest.json
+
+  # grab json payload about latest Terragrunt version
+  curl -s -o $LATEST https://api.github.com/repos/fluxcd/flux2/releases/latest
+
+  CURRENT_VERSION=$(flux --version | awk '{ print $(NF) }')
+  UPSTREAM_VERSION=$(cat $LATEST | jq -r .name)
+  SEMVER_COMP=$(semver compare ${UPSTREAM_VERSION:1} $CURRENT_VERSION)
+
+  if [[ "$SEMVER_COMP" == "0" ]]
+  then
+    echo "Current version of Flux (${CURRENT_VERSION}) is up to date"
+    return 1
+  fi
+
+  echo "current : $CURRENT_VERSION"
+  echo "upstream: ${UPSTREAM_VERSION:1}"
+  read -r -p "Do you want to update? [y/N] " response
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
+  then
+    BROWSER_DOWNLOAD_URL=$(cat $LATEST | jq -r '.assets[] | select(.name | endswith("_linux_amd64.tar.gz")) | .browser_download_url')
+    FILE_NAME=$(cat $LATEST | jq -r '.assets[] | select(.name | endswith("_linux_amd64.tar.gz")) | .name')
+    echo "installing..."
+    sudo whoami > /dev/null # allow sudo to run after download
+    TEMP_BINARY=/tmp/${FILE_NAME}
+    wget -q --output-document=${TEMP_BINARY} $BROWSER_DOWNLOAD_URL
+
+    # unpack tar
+    tar xvzf $TEMP_BINARY --directory /tmp/
+
+    if sudo install /tmp/flux $(type -p flux)
+    then
+        echo "Installation succeeded"
+        echo -n "Current version: v"; flux --version | awk '{ print $(NF) }'
+    else
+        echo "Installation failed"
+        echo "Somthing goes wrong"
+    fi
+  else
+    echo "ok, exiting"
+  fi
+}
+
+# Install latest Helm
+function helm.upgrade() {
+  _info $UPGRADE_MESSAGE
+
+  curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+  chmod 700 /tmp/get_helm.sh
+  /tmp/get_helm.sh
+  rm /tmp/get_helm.sh
+}
+
+# Upgrade grype
+function grype.upgrade() {
+  _info $UPGRADE_MESSAGE
+
+  LATEST=/tmp/grype-latest.json
+
+  # grab json payload about latest Grype version
+  curl -s -o $LATEST https://api.github.com/repos/anchore/grype/releases/latest
+
+  CURRENT_VERSION=$(grype version -o json | jq -r .version)
+  UPSTREAM_VERSION=$(cat $LATEST | jq -r '.name' | cut -c 2-)
+  SEMVER_COMP=$(semver compare ${UPSTREAM_VERSION} $CURRENT_VERSION)
+
+  if [[ "$SEMVER_COMP" == "0" ]]
+  then
+    echo "Current version of Grype (${CURRENT_VERSION}) is up to date"
+    return 1
+  fi
+
+  echo "current : $CURRENT_VERSION"
+  echo "upstream: ${UPSTREAM_VERSION}"
+  read -r -p "Do you want to update? [y/N] " response
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
+  then
+    curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b $(dirname $(type -p grype))
+  else
+    echo "ok, exiting"
+  fi
+}
+
+# Upgrade aws-cli
+function aws.upgrade() {
+  _info $UPGRADE_MESSAGE
+
+  STARTPWD=$(pwd)
+  mktestdir aws-cli
+  git clone --depth=1 https://github.com/aws/aws-cli.git ${MKTESTDIR}/aws-cli
+
+  UPSTREAM_VERSION=$(git --git-dir ${MKTESTDIR}/aws-cli/.git ls-remote --ref --tags origin | awk '{ print $NF }' | sort --version-sort  | tail -n1 | rev | cut -d/ -f1 | rev)
+  CURRENT_VERSION=$(aws --version | awk '{ print $1 }' | cut -d/ -f2)
+  SEMVER_COMP=$(semver compare ${UPSTREAM_VERSION} $CURRENT_VERSION)
+
+  if [[ "$SEMVER_COMP" == "0" ]]
+  then
+    echo "Current version of AWS cli (${CURRENT_VERSION}) is up to date"
+    cd $STARTPWD
+    return 1
+  fi
+
+  echo "current : $CURRENT_VERSION"
+  echo "upstream: ${UPSTREAM_VERSION}"
+  read -r -p "Do you want to update? [y/N] " response
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
+  then
+    set -o xtrace
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "${MKTESTDIR}/awscliv2.zip"
+    unzip "${MKTESTDIR}/awscliv2.zip" -d "${MKTESTDIR}"
+    cd $MKTESTDIR
+    sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+    set +o xtrace
+
+    rm -rf $MKTESTDIR
+  else
+    echo "ok, exiting"
+  fi
+
+  cd $STARTPWD
+}
+
+### this package is temporary corrupted so please dont' use it
+# Upgrade terraform-module-versions
+function terraform-module-versions.upgrade() {
+  _info $UPGRADE_MESSAGE
+
+  LATEST=/tmp/terraform-module-versions-latest.json
+
+  # grab json payload about latest Grype version
+  curl -s -o $LATEST https://api.github.com/repos/keilerkonzept/terraform-module-versions/releases/latest
+
+  CURRENT_VERSION=$(terraform-module-versions version)
+  UPSTREAM_VERSION=$(cat $LATEST | jq -r '.name')
+  SEMVER_COMP=$(semver compare ${UPSTREAM_VERSION} $CURRENT_VERSION)
+
+  if [[ "$SEMVER_COMP" == "0" ]]
+  then
+    echo "Current version of Grype (${CURRENT_VERSION}) is up to date"
+    return 1
+  fi
+
+  echo "current : $CURRENT_VERSION"
+  echo "upstream: ${UPSTREAM_VERSION}"
+  read -r -p "Do you want to update? [y/N] " response
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
+  then
+    BROWSER_DOWNLOAD_URL=$(cat $LATEST | jq -r '.assets[] | select(.name | endswith("_linux_x86_64.tar.gz")) | .browser_download_url')
+    FILE_NAME=$(cat $LATEST | jq -r '.assets[] | select(.name | endswith("_linux_x86_64.tar.gz")) | .name')
+    echo "installing..."
+    sudo whoami > /dev/null # allow sudo to run after download
+    TEMP_BINARY=/tmp/${FILE_NAME}
+    wget -q --output-document=${TEMP_BINARY} $BROWSER_DOWNLOAD_URL
+
+    # unpack tar
+    tar xvzf $TEMP_BINARY --directory /tmp/
+
+    echo "TEMP_BINARY: $TEMP_BINARY"
+
+    if sudo install /tmp/terraform-module-versions $(type -p terraform-module-versions)
+    then
+        echo "Installation succeeded"
+        echo -n "Current version: "; terraform-module-versions version
+    else
+        echo "Installation failed"
+        echo "Somthing goes wrong"
+    fi
+
+    rm -v /tmp/terraform-module-versions*
+  else
+    echo "ok, exiting"
+  fi
+}
+
+
+# Install latest Dockle
+function dockle.upgrade() {
+  _info $UPGRADE_MESSAGE
+
+  LATEST=/tmp/dockle-latest.json
+
+  # grab json payload about latest Terragrunt version
+  curl -s -o $LATEST https://api.github.com/repos/goodwithtech/dockle/releases/latest
+  CURRENT_VERSION=v$(dockle --version | awk '{print $3}')
+  UPSTREAM_VERSION=$(cat $LATEST | jq -r .name)
+  SEMVER_COMP=$(semver compare $UPSTREAM_VERSION $CURRENT_VERSION)
+
+  if [[ "$SEMVER_COMP" == "0" ]]
+  then
+    echo "Current version of Dockle (${CURRENT_VERSION}) is up to date"
+    return 1
+  fi
+
+  echo "current : $CURRENT_VERSION"
+  echo "upstream: $UPSTREAM_VERSION"
+  read -r -p "Do you want to update? [y/N] " response
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
+  then
+    BROWSER_DOWNLOAD_URL=$(cat $LATEST | jq -r '.assets[] | select(.name | endswith("_Linux-64bit.tar.gz")) | .browser_download_url')
+    echo "installing..."
+    sudo whoami > /dev/null
+
+    NAME=$(echo $BROWSER_DOWNLOAD_URL | rev | cut -d/ -f1 | rev)
+    mkdir -p /tmp/dockle/
+    wget --quiet --show-progress --output-document=/tmp/dockle/$NAME $BROWSER_DOWNLOAD_URL
+
+    # unpack tar
+    tar xvzf /tmp/dockle/$NAME --directory /tmp/dockle > /dev/null
+
+    if sudo install /tmp/dockle/dockle $(type -p dockle)
+    then
+        echo "Installation succeeded"
+        echo -n "Current version: "; dockle --version | awk '{print $3}'
+    else
+        echo "Installation failed"
+        echo "Somthing goes wrong"
+    fi
+    rm -rf /tmp/dockle/
+  else
+    echo "ok, exiting"
+  fi
+}
+
+
+################################################################################
+# make all upgrades at ones
+function allunel.upgrade() {
+  terraform.upgrade; _newline; _newline '----------'
+  terragrunt.upgrade; _newline; _newline '----------'
+  helm.upgrade; _newline; _newline '----------'
+  flux.upgrade; _newline; _newline '----------'
+  aws.upgrade; _newline; _newline '----------'
+  dockle.upgrade; _newline; _newline '----------'
+  grype.upgrade
+}

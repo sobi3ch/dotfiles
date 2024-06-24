@@ -1,0 +1,122 @@
+function tf.providers_lock_all_platforms.show-command() {
+    echo "terraform providers lock -platform=linux_amd64 -platform=darwin_amd64 -platform=windows_amd64"
+}
+
+function tf.hcl2target() {
+    # if it's starting whith "module" then we need to keep it somehow
+    # ..so lets add some rubbish at the beginning
+    sed 's#^module#xxx module#g' | \
+      awk '{for (i=2; i<NF; i++) printf $i " "; print $NF}' | \
+      tr -d '"{'  | \
+      trim | \
+      sed 's/ /./g'
+}
+
+alias hcl2target=tf.hcl2target
+
+# format list of machine targets to oneline cli command where each reaource is
+# prefixed with --taget=
+#
+# e.g.:
+# resource.one
+# resource.two
+#
+# --taget=resource.one --taget=resource.two
+function tf.targets2cli() {
+    sed 's/^/--target=/g' |sed -z 's/\n/ /g'
+}
+
+alias targets2cli=tf.targets2cli
+
+function grep.tf-resources() {
+    grep -E '^(resource|module)' $1
+}
+
+# Get terraform config file as an input and format cli out of it
+# todo: add bats tests
+function tf.resources2cli() {
+    if [ -z "$1" ]
+    then
+        >&2 echo "Usage: ${FUNCNAME[0]} TERRAFORM_FILENAME" 
+    else
+        FILE=$1
+        if test -f "$FILE"; then
+            grep.tf-resources $FILE | \
+              hcl2target | \
+              targets2cli
+        else
+           >&2 echo "Cannot access '$FILE': No such file"
+        fi
+    fi
+}
+
+alias resources2cli=tf.resources2cli
+
+function tf.plan.action-resource() {
+    PLANFILE=$(git rev-parse --show-toplevel)/$(basename $(pwd)).plan
+    if [ ! -f "$PLANFILE" ]
+    then
+        >&2 echo "Error: Plan file does not exist at $PLANFILE"
+    else
+        PLAN=$PLANFILE
+        if test -f "$PLAN"; then
+            terraform show -no-color $PLAN | \
+                egrep '^  # ' | \
+                grep -v 'has changed' | \
+                sed -E 's# (will|must) be # (#g' | \
+                sed 's#d*$#)#g' | \
+                sed 's/^  # //g' | \
+                sed -r 's/ ([^(])/*\1/g' | \
+                awk '{ print $2, $1}' | \
+                grep -v "))$" | \
+                column -t | \
+                sed 's#*# #g'
+        else
+            >&2 echo "Cannot access '$PLAN': No such file"
+        fi
+    fi
+}
+
+alias planfile2action-resource=tf.plan.action-resource
+
+# list all resources names
+function tf.plan.list-all-resources-names() {
+    PLANFILE=$(git rev-parse --show-toplevel)/$(basename $(pwd)).plan
+    if [ ! -f "$PLANFILE" ]
+    then
+        >&2 echo "Error: Plan file does not exist at $PLANFILE"
+    else
+        PLAN=$PLANFILE
+        if test -f "$PLAN"; then
+            if [ -z "$2" ]; then
+                tf.plan.action-resource $PLAN | rev | awk.print 1 | rev | sort
+            else
+                ACTION=$2
+                tf.plan.action-resource $PLAN | sort | grep "($ACTION)" | awk.print 2 | sort
+            fi
+        else
+            >&2 echo "Cannot access '$PLAN': No such file"
+        fi
+    fi
+}
+
+# sort count all resources names
+function tf.plan.list-all-resources-names.count() {
+    PLANFILE=$(git rev-parse --show-toplevel)/$(basename $(pwd)).plan
+    if [ ! -f "$PLANFILE" ]
+    then
+        >&2 echo "Error: Plan file does not exist at $PLANFILE"
+    else
+        tf.plan.list-all-resources-names $PLANFILE | rev | cut -d'.' -f2 | rev | sort | uniq -c | sort -hr
+    fi
+}
+
+# Write plan to output file based on 
+# CURRENT folder we are running the command
+function tf.plan.out() {
+    OUT_FILE=$(basename $(pwd)).plan
+    echo "Generating Tf plan for $OUT_FILE"
+    CMD="terraform plan -out=$OUT_FILE $@"
+    echo "Running: $CMD"
+    eval $CMD
+ }

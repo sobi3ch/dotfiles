@@ -1,0 +1,52 @@
+#
+# INFO: If you want to add new company my-bash dir then set it up as $HOME/.my-bash-<COMPANY-NAME>/
+# INFO: Proper sort: remember if you put number in front of the file name then they need to start
+# with 10 and end with 99 (10-99) for proper sorting
+#
+
+#   - old config
+# For all my-bash-.. dirs
+# OTHER=$(find $HOME -maxdepth 1 -name ".my-bash-*" -type d | grep -v '.my-bash-private')
+
+#   - old config
+# .my-bash-private needs to load always first!
+#MY_BASH_DIRS=$(echo $OTHER | sed -r '1 i\'"$HOME"'/.my-bash-private')
+#unset OTHER
+#
+
+MY_BASH_DIRS="$HOME/.config/my/bash/"
+for DIR in $MY_BASH_DIRS
+do
+  # Load each alias from each MY_BASH dir
+  for ALIAS in $(ls -1 $DIR/aliases/*.aliases | sort)
+  do
+    echo "Loading: $(basename $DIR) - $(basename $ALIAS)"
+    source $ALIAS
+  done
+done
+
+#
+# THE END - .my-bash- aliases
+#
+
+
+function _msg()
+{
+  echo "Info: $@"
+}
+
+# 1st param = Message
+function _info()
+{
+  if [ -z "$1" ]
+  then
+    echo "[${FUNCNAME[0]}] Missing message parameter"
+  else
+    echo "[${FUNCNAME[1]}] $1"
+  fi
+}
+
+function _newline()
+{
+  echo $1
+}

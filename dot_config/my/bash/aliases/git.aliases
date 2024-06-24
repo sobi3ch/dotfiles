@@ -1,0 +1,71 @@
+## git
+export GPG_TTY=$(tty)
+
+# Get basic information on local git configuration
+function git.config() {
+  git config user.name
+  git config user.email
+}
+
+# Setup local repo
+function git.setup.sobi3ch()
+{
+  git config user.name "Piotr Sobieszczański"
+	git config user.email piotr.sobieszczanski@gmail.com
+}
+
+#  -h to print help
+function git.tag-patch-release-and-push()
+{
+  if [ "$1" == "-h" ]; then
+    echo "# example usgage:"
+    echo "# $ postfix=-testing ${FUNCNAME[0]}"
+    echo "# will generate tag similar to this: 1.2.4-testing"
+    echo
+    echo "# $ prefix=testing- ${FUNCNAME[0]}"
+    echo "# will generate tag similar to this: testing-1.2.4"
+    echo "# note: you can use both of them at the same time"
+  else
+    git fetch --all --tags
+    TAGS=$(git tag | sort -V)
+    echo; _info "Last 5 versions:"
+    echo "$TAGS" | tail -n5
+    echo "$TAGS" | tail -n1 > VERSION
+    semver-bump patch-release > /dev/null
+    NEW_TAG=$prefix$(cat VERSION)$postfix
+    echo; echo "New tag:"
+    echo $NEW_TAG
+    echo    # (optional) move to a new line
+    read -p "Looks OK? " -n 1 -r
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+      git tag $NEW_TAG
+      git push origin $NEW_TAG
+    fi
+  fi
+}
+
+# Add prefix to each message in all commits
+function git.prefix_all_commits() {
+  if [ $# -lt 2 ]; then
+    echo 'need two arguments'
+    echo '1: prefix text'
+    echo '2: commit sha how "deep" to go'
+    echo 'exmaple: "projectX: " d9ac60f'
+    exit 1
+  else
+    git filter-branch -f --msg-filter "printf \"${1}\" && cat" $2..HEAD
+  fi
+}
+
+# Miscellaneous
+alias git.config.sobi3ch=git.setup.sobi3ch
+alias gs='git status --short'
+alias gd='git diff'
+alias stash='git stash list'
+
+# https://rtyley.github.io/bfg-repo-cleaner/
+alias bfg='java -jar /home/sobi3ch/java/bfg-1.14.0.jar'
+
+
+alias pc="pre-commit"

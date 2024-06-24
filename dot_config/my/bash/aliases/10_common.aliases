@@ -1,0 +1,225 @@
+# This script production following aliases.
+#
+# alias ..='cd ../'
+# alias ...='cd ../../'
+# alias ....='cd ../../../'
+# alias .....='cd ../../../../'
+# alias ......='cd ../../../../../'
+# alias .......='cd ../../../../../../'
+# alias ........='cd ../../../../../../../'
+# alias .........='cd ../../../../../../../../'
+# alias ..........='cd ../../../../../../../../../'
+# alias ...........='cd ../../../../../../../../../../'
+#
+# If you what even deeper `cd` then just change 10 in `seq 10` for number you like.
+# You can use it in your `.bashrc` or `.bash_aliases` or wherever you loading your aliases. 
+
+# quick go up (cd ..)
+for i in `seq 10`
+do
+  cdpath=''
+  dots='.'
+  for p in `seq 1 $i`
+  do
+    cdpath=$cdpath'../'
+    dots=$dots.
+  done
+  alias ${dots}="cd ${cdpath}"
+done
+
+# example usage 
+# $ echo 'hello%40world' | urldecode
+function urldecode() 
+{
+  echo -e "$(sed 's/+/ /g;s/%\(..\)/\\x\1/g;')"
+}
+
+# https://unix.stackexchange.com/a/187256/20056
+# example usage 
+# $ echo 'hello@world' | urldecode
+function urlencode() 
+{
+  php -r 'echo urlencode(rtrim(fgets(STDIN)));'
+  echo;
+}
+
+
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+alias clear-swap='sudo swapoff -a && sudo swapon -a'
+alias inr-grep='grep -inR'
+alias nr-grep='grep -nR'
+alias igrep='grep -i'
+alias inr-egrep='egrep -inR'
+alias git-egrep='inr-egrep --exclude-dir .git'
+alias tf-egrep='git-egrep --exclude-dir .terraform'
+alias grepnc='grep --color=never'
+alias egrepnc='egrep --color=never'
+alias nr-grepnc='nr-grep --color=never'
+alias inr-grepnc='inr-grepnc --color=never'
+alias tf-egrepnc='tf-egrep --color=never'
+alias tf-grepnc='tf-egrep --color=never'
+
+# https://stackoverflow.com/a/37986910/473390
+alias stopwatch='now=$(date +%s)sec; watch -n0.1 -p TZ=UTC date --date now-$now +%H:%M:%S'
+
+
+################
+# Tool for Containers, Kubernetes, Infrastruction and from HashiCorp
+alias tg=terragrunt
+alias t=terraform # for better completion solution we are using now this gist
+# https://gist.github.com/zish/85dccece461e050077997ff5d7d9c9d4 which needs 
+# full command to work and this is why we switching from t alias to 
+# /usr/local/bin/t command (as an symlink)
+
+alias wp=waypoint
+alias p=packer
+alias v=vagrant
+
+# Kubernetes
+alias k=kubectl
+alias mk=minikube
+alias eks=eksctl
+
+function flux.version() {
+  KKJSON=$(kubectl get -n flux-system deployments.apps kustomize-controller -o json)
+  echo -n "kubernetes current config : "; kubectl config current-context
+  echo    "flux server-side version  : $( echo "$KKJSON" | jq --raw-output '.metadata.labels."app.kubernetes.io/version"')"
+  echo    "flux local CLI version    : v$(flux --version | awk '{ print $(NF) }')"
+}
+
+function flux.components() {
+  echo -n "kubernetes current config : "; kubectl config current-context
+  flux version | tail -n+2
+}
+
+alias d=docker
+alias dc='docker compose'
+alias dl='docker ps -l -q'
+################
+
+# Laravel
+alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'
+alias artisan='php artisan'
+alias art=artisan
+################
+
+alias sb=semver-bump
+alias c=cheat
+alias cr=composer
+
+# To lower case help create issue branch name
+alias tolower="tr '[:upper:]' '[:lower:]'"
+alias toupper="tr '[:lower:]' '[:upper:]'"
+alias kebabcase="tolower | sed 's#[ :_]#-#g'"
+alias snakecase="tolower | sed 's#[ :-]#_#g'"
+alias pascalcase="sed -r 's/(^|-|_| )([a-z])/\U\2/g'"
+alias camelcase="sed -r 's/[-_ ]+(.)?/\U\1/g'"
+
+# Print the nth string part e.g.:
+# echo 'a b  c' | awk.print 3 # will print "c"
+function awk.print() {
+  if [[ $1 =~ ^[0-9]+$ ]]; then
+    awk "{ print \$$1}"
+  else
+    echo "Error: Parameter is not an integer."
+    echo "Usage: ${FUNCNAME[0]} INTEGER"
+  fi
+}
+
+
+##################
+# Forget last commmand immediately e.g.: mysql -uroot -pSecretPass ; forget
+function forget-last-commmand() {
+  history -d $(history | sed -n '$s/\s*\([0-9]*\)\s*.*$/\1/p')
+}
+
+
+# General
+alias ll='ls -lF'
+alias la='ls -A'
+alias l='ls -CF'
+alias 1='ls -1'
+alias i=1
+alias md=mkdir
+alias less='less -r' # Preserve colors in pipes like
+alias open='xdg-open' # https://stackoverflow.com/a/264401/473390
+alias pcat='pygmentize -g -O style=colorful,linenos=1'
+alias ccat=pcat # color cat
+alias watch='watch ' # for aliases; https://unix.stackexchange.com/a/25329/20056
+alias cal='ncal -M -b'
+
+## Calcualtor
+function calc() { 
+  printf "%s\n" "$@" | bc -l; 
+}
+
+# Search in history
+# e.g.: hist password
+alias hist='history | grep $1' #Requires one input
+
+
+# Miscelinius helpers
+alias gateway="ip route | grep ^default | cut -d' ' -f3"
+alias rsync-no-git="rsync --delete -alzv --exclude '.git'"
+alias tar-create='tar -zcvf'
+alias create-tar=tar-create
+alias quit=exit
+alias cloc-drupal='cloc --force-lang="PHP",module --force-lang="PHP",install --force-lang="PHP",inc'
+alias clear-swap='sudo swapoff -a; sudo swapon -a'
+alias clean-swap='clear-swap'
+alias spotify-clear-cache='rm -Rf ~/.cache/spotify'
+#alias c='pygmentize -O style=monokai -f console256 -g'
+alias xclip='xclip -selection c'
+alias restart-nm-applet='killall nm-applet && nm-applet 2>&1'
+alias generate.password="pwgen -1ysc 12 20"
+alias real-time='/usr/bin/time -f "%e"'
+alias restart-unity='sudo systemctl restart lightdm.service'
+
+function myip()
+{
+  dig +short myip.opendns.com @resolver1.opendns.com
+}
+
+alias todo='cat ~/todo.txt'
+alias todo.edit='vim ~/todo.txt'
+
+# Make test directory and cd to it
+function mktestdir()
+{
+  if [ -z "$1" ]
+  then
+    _info "Missing tmp dir name"
+    _info "about: Create uniq temporary directory and cd to it so you can test some stuff."
+  else
+    DIR=$(mktemp --tmpdir --directory ${1}.XXXXXXXXXX)
+    cd $DIR;
+    export MKTESTDIR=$DIR
+    _info "MKTESTDIR env exported"
+  fi
+}
+
+function battery.help() 
+{
+  echo "link to docs: https://www.dell.com/support/manuals/pl-pl/command-configure-v4.1/dcc_cli_4.1.0/--primarybattchargecfg?guid=guid-681d4efe-eed0-4d0f-b290-afdd74e81765"
+  echo ;echo "Example: set value beetween 90-95%"
+  echo "sudo cctk --PrimaryBattChargeCfg=Custom:90-95"
+  echo; echo "Check current setings:"
+  echo "sudo cctk --PrimaryBattChargeCfg"
+}
+
+
+################################################################################
+#
+# My Bash related
+
+alias mybash.private.edit="code $HOME/.my-bash-private"
+function mybash.private.ansilbe-run() {
+  pushd $HOME/.my-bash-private
+  ANSIBLE_LOCALHOST_WARNING=False ansible-playbook -K ansible/playbook.yaml $@
+  popd
+}
+
+alias mybash.wireless.edit="code $HOME/.my-bash-wireless"

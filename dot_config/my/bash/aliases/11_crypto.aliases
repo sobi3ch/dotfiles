@@ -1,0 +1,42 @@
+## Encrypt any file content
+function encrypt()
+{
+  if test -f "$1"; then
+    FILE=$1
+    cat $FILE | gpg --sign --armor > $FILE.gpg
+    _info "File $FILE encrypted to $FILE.gpg"
+
+    QUESTION=$(_info "Do you want to delete $FILE? [Y/n] ")
+    read -p "$QUESTION" -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ $REPLY =~ ^(Y|y| ) ]] || [[ -z $REPLY ]]
+    then
+      _info "Deleting $FILE .."
+      rm $FILE
+      _info "Done"
+
+    else
+      _info "Leaving source file $FILE as it is.."
+    fi
+  else
+    _info "Sorry, cannot find $1 file"
+  fi
+
+  _password.autocomplete
+}
+
+## Decrypt any file content
+alias clip='xclip -selection c'
+
+function decrypt()
+{
+  if test -f "$1"; then
+    FILE=$1
+    cat $FILE | gpg -d | clip
+    _info "Content of the $FILE copy to clipboard"
+  else
+    _info "Sorry, cannot find $1 file"
+  fi
+}
+
+alias gpg.show-keys-ids='gpg --list-secret-keys --keyid-format LONG | grep ssb -B1'
