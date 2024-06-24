@@ -1,0 +1,14 @@
+- name: K9s
+  block:
+  - name: Check K9s is installed
+    shell:
+      cmd: type k9s
+    register: result
+    check_mode: false
+    changed_when: false
+    failed_when: result.rc != 0 and result.rc != 127
+
+  - name: Instlal K9s
+    shell: curl -sS https://webinstall.dev/k9s | bash
+    check_mode: false
+    when: "'not found' in result.stdout"

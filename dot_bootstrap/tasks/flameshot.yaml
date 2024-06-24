@@ -1,0 +1,29 @@
+- name: Flameshot
+  block:
+
+  - name: Install Flameshot
+    become: true
+    ansible.builtin.apt:
+      state: present
+      pkg:
+      - flameshot # https://flameshot.org/
+
+  - name: Remove default PrintScreen behavior
+    community.general.dconf:
+      key: '/org/gnome/shell/keybindings/show-screenshot-ui'
+      value: "['']"
+
+  - name: Add custom shortcut (binding)
+    community.general.dconf:
+      key: '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding'
+      value: "'Print'"
+
+  - name: Add custom shortcut (command)
+    community.general.dconf:
+      key: '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command'
+      value: "'/usr/bin/flameshot gui'"
+
+  - name: Add custom shortcut (name)
+    community.general.dconf:
+      key: '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name'
+      value: "'Flameshot'"

@@ -1,0 +1,29 @@
+- name: Install package dependencies.
+  package: name={{ item }} state=present
+  with_items:
+    - python3
+    - unzip
+
+# Install only on older then Ubuntu 23
+- name: pythong3.10-venv for older Ubuntus
+  ansible.builtin.apt:
+    name: python3.10-venv
+    state: present
+  when: ansible_distribution_version < "23.04"
+
+
+- name: Download the awscli bundle.
+  get_url: url=https://s3.amazonaws.com/aws-cli/awscli-bundle.zip dest=/tmp/awscli-bundle.zip
+  register: aws_cli_download_bundle
+
+- name: Unarchive the installer.
+  unarchive: src=/tmp/awscli-bundle.zip dest=/tmp copy=no creates=/tmp/awscli-bundle
+  when: aws_cli_download_bundle.changed
+  register: aws_cli_unarchive_installer
+
+- name: Install awscli package.
+  become: true
+  shell: python3 /tmp/awscli-bundle/install -i /usr/local/aws -b /usr/bin/aws
+  args:
+    creates: /usr/bin/aws
+  when: aws_cli_unarchive_installer.changed

@@ -1,0 +1,33 @@
+- name: Enpass
+  become: true
+  block:
+    - name: Check GPG key is installed
+      stat:
+        path: /etc/apt/trusted.gpg.d/enpass.asc
+      register: gpg_installed
+
+    - name: Install GPG key
+      ansible.builtin.get_url:
+        url: https://apt.enpass.io/keys/enpass-linux.key
+        dest: /etc/apt/trusted.gpg.d/enpass.asc
+      when: not gpg_installed.stat.exists
+
+    - name: Check Enpass apt source is installed
+      stat:
+        path: /etc/apt/sources.list.d/enpass.list
+      register: enpass_source_installed
+
+    - name: Add repository
+      ansible.builtin.apt_repository:
+        repo: deb https://apt.enpass.io/ stable main
+        state: present
+        filename: enpass
+      when: not enpass_source_installed.stat.exists
+
+    - name: Install via apt
+      ansible.builtin.apt:
+        name: enpass
+        state: present
+        force_apt_get: yes
+        update_cache: yes
+      when: not enpass_source_installed.stat.exists

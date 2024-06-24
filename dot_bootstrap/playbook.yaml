@@ -1,0 +1,31 @@
+---
+  - name: "sobi3ch set up"
+    hosts: localhost
+    connection: local
+
+    tasks:
+    - name: Install core packages
+      include_tasks: tasks/core.yaml
+      tags:
+        - core
+        - core-cli
+        - gnome
+
+    - name: Ensures HOME/.local/bin dir exists
+      file:
+        path: "{{ ansible_env.HOME }}/.local/bin"
+        state: directory
+      tags: home-bin
+
+    - name: Ensures HOME/.local/share/man/man1 dir exists
+      file:
+        path: "{{ ansible_env.HOME }}/.local/share/man/man1"
+        state: directory
+      tags: home-bin
+
+    - name: Install Z jump around
+      include_tasks:
+        file: tasks/z.yaml
+        apply:
+          tags: z
+      tags: always

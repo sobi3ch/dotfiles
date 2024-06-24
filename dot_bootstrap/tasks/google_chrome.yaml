@@ -1,0 +1,39 @@
+- name: Google Chrome
+  become: true
+  block:
+    - name: Check GPG key is installed
+      stat:
+        path: /etc/apt/keyrings/google-chrome.gpg
+      register: gpg_installed
+
+    - name: Get GPG key
+      ansible.builtin.get_url:
+        url: https://dl-ssl.google.com/linux/linux_signing_key.pub
+        dest: /tmp/google-chrome.gpg
+      when: not gpg_installed.stat.exists
+
+    - name: Import GPG key
+      command: "gpg --no-default-keyring 
+                    --keyring /etc/apt/keyrings/google-chrome.gpg 
+                    --import /tmp/google-chrome.gpg"
+      when: not gpg_installed.stat.exists
+
+    - name: Check Chrome apt source is installed
+      stat:
+        path: /etc/apt/sources.list.d/google-chrome.list
+      register: chrome_source_installed
+
+    - name: Add repository
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main
+        state: present
+        filename: google-chrome
+      when: not chrome_source_installed.stat.exists
+
+    - name: Install via apt
+      ansible.builtin.apt:
+        name: google-chrome-stable
+        state: present
+        force_apt_get: yes
+        update_cache: yes
+      when: not chrome_source_installed.stat.exists

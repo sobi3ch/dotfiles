@@ -1,0 +1,16 @@
+# setup correct machine time
+- name: Install ntpdate
+  become: true
+  apt:
+    state: present
+    pkg:
+    - ntpdate
+
+- name: "Setup ntpdate config"
+  become: true
+  file:
+    dest: "/etc/cron.daily/ntpdate"
+    src: "{{ playbook_dir }}/files/ntpdate"
+    owner: root
+    group: root
+    state: link

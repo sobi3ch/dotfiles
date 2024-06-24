@@ -1,0 +1,17 @@
+- name: Install github3 python package
+  become: true
+  ansible.builtin.pip:
+    name: github3.py
+
+- name: Get argocd latest tag 
+  github_release:
+    user: argoproj
+    repo: argo-cd
+    action: latest_release
+  register: reg
+
+- name: Install argocd latest binaries 
+  ansible.builtin.get_url:
+    url: "https://github.com/argoproj/argo-cd/releases/download/{{ reg['tag'] }}/argocd-linux-amd64"
+    dest: /usr/local/bin/argocd
+    mode: '0555'

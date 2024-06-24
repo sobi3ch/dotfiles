@@ -1,0 +1,22 @@
+- name: Z jump around
+  block:
+  - name: Check if z is installed
+    stat:
+      path: "{{ ansible_env.HOME }}/.local/bin/z.sh"
+    register: z
+
+  - name: Install z
+    get_url:
+      url: https://raw.githubusercontent.com/rupa/z/master/z.sh
+      dest: "{{ ansible_env.HOME }}/.local/bin/"
+      mode: '0554'
+    when: not z.stat.exists
+
+  - name: Install z man page
+    become: true
+    get_url:
+      url: https://raw.githubusercontent.com/rupa/z/master/z.1
+      dest: "{{ ansible_env.HOME }}/.local/share/man/man1/z.1"
+      mode: '0444'
+      force: true
+    when: not z.stat.exists

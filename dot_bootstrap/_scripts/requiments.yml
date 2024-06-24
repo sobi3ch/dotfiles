@@ -1,0 +1,7 @@
+- name: andrewrothstein.starship
+- name: gantsign.helm
+- name: gantsign.minikube
+- name: gantsign.visual-studio-code
+- name: diodonfrost.terraform
+- name: diodonfrost.terragrunt
+- name: geerlingguy.docker

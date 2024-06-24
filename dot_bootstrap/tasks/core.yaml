@@ -1,0 +1,189 @@
+# Issue:
+# When you run any command you will see
+# "ERROR: ld.so: object '/usr/lib/x86_64-linux-gnu/libgtk3-nocsd.so.0' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored."
+#
+# Solution:
+# https://stackoverflow.com/a/53825858
+- name: Enable the Copr repository for gtk3-nocsd
+  become: true
+  command: dnf -y copr enable hdfssk/gtk3-nocsd
+  register: copr_repo
+
+- name: Install gtk3-nocsd package
+  become: true
+  dnf:
+    name: gtk3-nocsd
+    state: present
+  when: copr_repo.changed
+
+- name: Install core CLI tools
+  become: true
+  ansible.builtin.dnf:
+    state: present
+    pkg:
+    - tmux
+    - zsh
+    - curl
+    - vim
+    - keychain
+    #- pipenv
+    - pwgen
+    - jq
+    - yq
+    - btop # better htop
+    - glances # super htop
+    - nmap
+    - net-tools
+    - whois
+    - git
+    - gh
+    - pass
+    - fzf
+    - mc
+    - bat # color ouput for cat
+    - vpnc # Cisco VPN client
+    - inxi
+    - pv # pipe viewer
+    - screenfetch # google image for screenfetch
+    - speedtest-cli
+    - units
+    - xclip # copy to clipboard
+    - xsel
+    - ripgrep # modern grep
+    - exa # modern ls
+    - cloc # cound code lines; https://github.com/AlDanial/cloc
+    - fd-find # modern find: https://github.com/sharkdp/fd
+    - tldr # better cheat
+#    - taskwarrior # task manager (todo) : https://taskwarrior.org/docs/start/
+#    - hub # https://hub.github.com/
+  tags:
+    - core
+    - core-cli
+
+- name: Install Python
+  become: true
+  dnf:
+    state: latest
+    pkg:
+      - python3
+      - python3-setuptools
+      - python3-devel
+      - python3-pip
+  tags: 
+    - core
+    - core-python
+
+# - name: Gnome SETUP
+#   block:
+#   - name: Install dconf-editor
+#     become: true
+#     ansible.builtin.apt:
+#       name: dconf-editor
+#       state: present
+#     tags:
+#     - core
+#     - gnome
+
+#   - name: Install Gnome base packages for extenions to work
+#     become: true
+#     apt:
+#       state: latest
+#       pkg:
+#         - chrome-gnome-shell
+#         - gnome-browser-connector
+#         - gnome-shell-extension-prefs
+#     when: ansible_distribution_version == "23.04"
+#     tags:
+#     - core
+#     - gnome
+
+
+#   - name: Install gnome-shell-extension-manager
+#     become: true
+#     ansible.builtin.apt:
+#       name: gnome-shell-extension-manager
+#       state: present
+#     tags:
+#     - core
+#     - gnome
+
+#   - name: Install gnome-tweaks
+#     become: true
+#     ansible.builtin.apt:
+#       name: gnome-tweaks
+#       state: present
+#     tags:
+#     - core
+#     - gnome
+
+#   - name: Install gnome-shell-extension-ubuntu-tiling-assistant
+#     become: true
+#     ansible.builtin.apt:
+#       name: gnome-shell-extension-ubuntu-tiling-assistant
+#       state: present
+#     when:
+#       - ansible_distribution == 'Ubuntu'
+#       - ansible_distribution_version == '23.04'
+#     tags:
+#     - core
+#     - gnome
+
+#   - name: Install CLI cmd to manage GNOME extensions
+#     ansible.builtin.pip:
+#       name: gnome-extensions-cli
+#       extra_args: --user --upgrade
+#     when:
+#       - ansible_distribution == 'Ubuntu'
+#       - ansible_distribution_version is version('23.04', '<')
+#     tags:
+#     - core
+#     - gnome
+
+#   - name: Install GNOME tiling-assistant
+#     ansible.builtin.command:
+#       cmd: gext install "tiling-assistant@leleat-on-github" gext enable "tiling-assistant@leleat-on-github"
+#     when:
+#       - ansible_distribution == 'Ubuntu'
+#       - ansible_distribution_version is version('23.04', '<')
+#     tags:
+#     - core
+#     - gnome
+
+### GUI SETUP
+# - name: Install terminator
+#   become: true
+#   ansible.builtin.apt:
+#     name: terminator
+#     state: present
+#   tags: core
+
+# add vir-manager + qemu
+
+# - name: Install Slack
+#   become: true
+#   community.general.snap:
+#     name:
+#       - slack
+#   tags: core
+
+# - name: Install Spotify
+#   become: true
+#   community.general.snap:
+#     name: spotify
+#   tags: core
+
+# - name: Install Gimp
+#   become: true
+#   ansible.builtin.apt:
+#     name: gimp
+#     state: present
+#   tags: core
+
+# ### Other
+# - name: Make sure batcat is symlinked
+#   become: true
+#   file:
+#     src: "/usr/bin/batcat"
+#     dest: "/usr/local/bin/bat"
+#     state: link
+#   tags: core

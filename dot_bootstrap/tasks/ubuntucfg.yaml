@@ -1,0 +1,145 @@
+- name: Ubuntu config
+  block:
+
+  - name: Wallpaper
+    block:
+    - name: Check if wallpaper is downloaded
+      stat:
+        path: "{{ ansible_env.HOME }}/.local/share/wallpaper.jpg"
+      register: wallpaper
+
+    - name: Download wallpaper
+      become_user: sobi3ch
+      ansible.builtin.get_url:
+        url: https://lostposters.com/wp-content/uploads/2022/12/Album-AndyStott-NeverTheRightTime.jpg
+        dest: "{{ ansible_env.HOME }}/.local/share/wallpaper.jpg"
+        force: true
+        mode: '0640'
+      when: not wallpaper.stat.exists
+
+    - name: Set GNOME Wallpaper
+      community.general.dconf:
+        key: '/org/gnome/desktop/background/picture-uri'
+        value: "'file://{{ ansible_env.HOME }}/.local/share/wallpaper.jpg'"
+
+    - name: Set GNOME Wallpaper (dark theme)
+      community.general.dconf:
+        key: '/org/gnome/desktop/background/picture-uri-dark'
+        value: "'file://{{ ansible_env.HOME }}/.local/share/wallpaper.jpg'"
+
+    - name: Adjustment
+      community.general.dconf:
+        key: '/org/gnome/desktop/background/picture-options'
+        value: "'scaled'"
+
+  # Miscellaneous
+  - name: "Ubuntu Desktop: Show personal folder"
+    community.general.dconf:
+      key: '/org/gnome/shell/extensions/ding/show-home'
+      value: 'false'
+
+  # keyboard
+  - name: Keyboard repeat interval
+    community.general.dconf:
+      key: '/org/gnome/desktop/peripherals/keyboard/repeat-interval'
+      value: 'uint32 47'
+
+  - name: Keyboard delay
+    community.general.dconf:
+      key: '/org/gnome/desktop/peripherals/keyboard/delay'
+      value: 'uint32 310'
+
+  # OS theme
+  - name: Set dark theme
+    community.general.dconf:
+      key: '/org/gnome/desktop/interface/gtk-theme'
+      value: "'Yaru-dark'"
+
+  - name: Set dark theme
+    community.general.dconf:
+      key: '/org/gnome/desktop/interface/color-scheme'
+      value: "'prefer-dark'"
+
+  # Date & time
+  - name: Show calendar week numbers
+    community.general.dconf:
+      key: '/org/gnome/desktop/calendar/show-weekdate'
+      value: 'true'
+
+  - name: Show clock weekday
+    community.general.dconf:
+      key: '/org/gnome/desktop/interface/clock-show-weekday'
+      value: 'true'
+
+  - name: Show clock seconds
+    community.general.dconf:
+      key: '/org/gnome/desktop/interface/clock-show-seconds'
+      value: 'true'
+
+  # Workspaces
+  - name: Workspaces
+    block:
+    - name: "Number of workspaces"
+      community.general.dconf:
+        key: '/org/gnome/desktop/wm/preferences/num-workspaces'
+        value: 'int32 3'
+
+    - name: "Fixed number of workspaces"
+      community.general.dconf:
+        key: '/org/gnome/mutter/dynamic-workspaces'
+        value: 'false'
+
+    - name: "Number of workspace colums"
+      community.general.dconf:
+        key: '/org/gnome/shell/extensions/wsmatrix/num-columns'
+        value: 'int32 3'
+
+    - name: "Number of workspace rows"
+      community.general.dconf:
+        key: '/org/gnome/shell/extensions/wsmatrix/num-rows'
+        value: 'int32 1'
+
+    - name: "Switch to left workspace"
+      community.general.dconf:
+        key: '/org/gnome/desktop/wm/keybindings/switch-to-workspace-left'
+        value: "['<Control><Super>Left']"
+
+    - name: "Switch to right workspace"
+      community.general.dconf:
+        key: '/org/gnome/desktop/wm/keybindings/switch-to-workspace-right'
+        value: "['<Control><Super>Right']"
+
+    - name: "Move window to left workspace"
+      community.general.dconf:
+        key: '/org/gnome/desktop/wm/keybindings/move-to-workspace-left'
+        value: "['<Control><Super><Shift>Left']"
+
+    - name: "Move window to right workspace"
+      community.general.dconf:
+        key: '/org/gnome/desktop/wm/keybindings/move-to-workspace-right'
+        value: "['<Control><Super><Shift>Right']"
+
+  # Volume
+  - name: Volume
+    block:
+    - name: "Volume up"
+      community.general.dconf:
+        key: '/org/gnome/settings-daemon/plugins/media-keys/volume-up'
+        value: "['<Control><Shift>Up']"
+
+    - name: "Volume down"
+      community.general.dconf:
+        key: '/org/gnome/settings-daemon/plugins/media-keys/volume-down'
+        value: "['<Control><Shift>Down']"
+
+    - name: "Pause/Play"
+      community.general.dconf:
+        key: '/org/gnome/settings-daemon/plugins/media-keys/play'
+        value: "['<Control><Shift><Super>Space']"
+
+# TODO
+  # - name: Set favorite apps iff not set
+  #   community.general.dconf:
+  #     key: '/org/gnome/shell/favorite-apps'
+  #     value: "['google-chrome.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'sublime_text.desktop', 'slack_slack.desktop']"
+  #   when: not favorites.value

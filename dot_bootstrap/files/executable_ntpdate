@@ -1,0 +1,3 @@
+#!/bin/sh
+# sync server time
+/usr/sbin/ntpdate pool.ntp.org >> /tmp/ntpdate.log

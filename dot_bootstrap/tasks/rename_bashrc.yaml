@@ -1,0 +1,20 @@
+# Backup .bashrc
+- name: Check if file exists
+  ansible.builtin.stat:
+    path: "{{ mysrc }}"
+  register: check_file_name
+  tags: bashrc
+
+- name: Copy bashrc with new name
+  ansible.builtin.copy:
+    src: "{{ mysrc }}"
+    dest: "{{ mydst }}"
+  when: check_file_name.stat.isreg
+  tags: bashrc
+
+- name: Remove old bashrc
+  ansible.builtin.file:
+    path: "{{ mysrc }}"
+    state: absent
+  when: check_file_name.stat.isreg
+  tags: bashrc
