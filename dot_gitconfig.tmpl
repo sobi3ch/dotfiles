@@ -1,0 +1,35 @@
+[alias]
+	ci = commit
+	co = checkout
+	st = status -s
+	crypt-users = "! git log --format=full .git-crypt/keys/*/*/*.gpg | grep -E '^            .+' | sed 's/ *$//g' | awk '{gsub(/^[ \t]+/,\"\"); print $0 }'"
+	set-sobi3ch-email = config user.email "piotr.sobieszczanski@gmail.com"
+	get-local-config = !git.get-local-config
+	one = log --oneline
+	gr = log --graph --full-history --all --color --pretty=tformat:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%s%x20%x1b[33m(%an)%x1b[0m"
+	unstage = reset
+	last-app-version = "!git tag | sort -V | tail -1"
+[user]
+	email = {{ (bitwardenFields "item" "gitconfig").user_email.value }}
+	name = {{ (bitwardenFields "item" "gitconfig").user_name.value }}
+	signingkey = {{ (bitwardenFields "item" "gitconfig").user_signingkey.value }}
+[commit]
+	gpgsign = false
+[core]
+	editor = vim
+[log]
+	date = relative
+[format]
+	pretty = format:%C(yellow)%h %Cblue%>(12)%ad %Cgreen%<(7)%aN%Cred%d %Creset%s
+[init]
+	defaultBranch = main
+	templateDir = /home/sobi3ch/.git-template
+[pull]
+	rebase = true
+
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
